@@ -9,12 +9,12 @@ const eBayApi = require('ebay-api')
 
 function slugify(str) {
   return str
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')           // Replace spaces with -
-      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-      .replace(/\-\-+/g, '-');        // Replace multiple - with single -
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+    .replace(/\-\-+/g, '-');        // Replace multiple - with single -
 }
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -46,21 +46,28 @@ const eBay = new eBayApi({
 // }
 // run().catch(console.dir);
 
-router.get('/', async function(req, res, next) {
+router.get('/', async function (req, res, next) {
   await client.connect();
   const database = client.db("multicam");
   const collection = database.collection("camera");
-  var cameras = await collection.aggregate([{$sample: {size: 10}}]).toArray();
-  
+  var cameras = await collection.aggregate([{ $sample: { size: 10 } }]).toArray();
+
   await Promise.all(cameras.map(async (camera) => {
-    const {itemSummaries} = await eBay.buy.browse.search({q: slugify(camera.title), limit: 1});
-    camera.priceProvider = "ebay"
-    camera.currency = itemSummaries[0].price.currency
-    camera.price = itemSummaries[0].price.value
-    camera.image = itemSummaries[0].image.imageUrl
+    try {
+      const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
+      camera.priceProvider = "ebay"
+      camera.currency = itemSummaries[0].price.currency
+      camera.price = itemSummaries[0].price.value
+      camera.image = itemSummaries[0].image.imageUrl
+    } catch (e) {
+      camera.priceProvider = "none"
+      camera.price = "--"
+      camera.image = "https://via.placeholder.com/150"
+      camera.currency = ""
+    }
   }));
 
-  res.json({cameras: cameras});
+  res.json({ cameras: cameras });
 });
 
 
