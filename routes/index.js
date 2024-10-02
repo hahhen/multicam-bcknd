@@ -5,6 +5,17 @@ const express = require('express')
 const app = express()
 const uri = process.env.MONGODB_PW;
 var router = express.Router();
+const eBayApi = require('ebay-api')
+
+function slugify(str) {
+  return str
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+      .replace(/\-\-+/g, '-');        // Replace multiple - with single -
+}
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -13,6 +24,12 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   }
+});
+
+const eBay = new eBayApi({
+  appId: 'ArthurMa-multicam-PRD-849ffde72-c981acce',
+  certId: 'PRD-49ffde721d14-d7d6-4674-a6cf-39d7',
+  sandbox: false
 });
 
 // async function run() {
@@ -29,8 +46,21 @@ const client = new MongoClient(uri, {
 // }
 // run().catch(console.dir);
 
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+router.get('/', async function(req, res, next) {
+  await client.connect();
+  const database = client.db("multicam");
+  const collection = database.collection("camera");
+  var cameras = await collection.aggregate([{$sample: {size: 10}}]).toArray();
+  
+  await Promise.all(cameras.map(async (camera) => {
+    const {itemSummaries} = await eBay.buy.browse.search({q: slugify(camera.title), limit: 1});
+    camera.priceProvider = "ebay"
+    camera.currency = itemSummaries[0].price.currency
+    camera.price = itemSummaries[0].price.value
+    camera.image = itemSummaries[0].image.imageUrl
+  }));
+
+  res.json({cameras: cameras});
 });
 
 
