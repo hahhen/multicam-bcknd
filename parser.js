@@ -1,6 +1,7 @@
-if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['instaview/lib/namespace_langs'], function (namespace_langs) {
-    'use strict';
+'use strict';
+
+const namespace_langs = require('instaview/lib/namespace_langs');
+    
     /*
      * InstaView - a Mediawiki to HTML converter in JavaScript
      * Version 0.6.1
@@ -890,5 +891,4 @@ define(['instaview/lib/namespace_langs'], function (namespace_langs) {
         return (num << cnt) | (num >>> (32 - cnt));
     }
 
-    return InstaView;
-});
+    module.exports = InstaView;
