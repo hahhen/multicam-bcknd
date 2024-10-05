@@ -50,7 +50,7 @@ const namespace_langs = require('instaview/lib/namespace_langs');
 
         paths: {
             base_href: '/',
-            articles: 'http://camera-wiki.com/wiki/',
+            articles: 'http://camera-wiki.org/wiki/',
             math: '/math/',
             images: '',
             images_fallback: 'http://upload.wikimedia.org/wikipedia/commons/',
