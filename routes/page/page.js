@@ -33,14 +33,21 @@ const client = new MongoClient(uri, {
 
 router.get('/', async function (req, res, next) {
     await client.connect();
+    const database = client.db("multicam");
+    const collection = database.collection("camera");
     var pageContent = await (await fetch(`http://camera-wiki.org/api.php?action=query&prop=revisions&rvprop=timestamp%7Cuser%7Ccomment%7Ccontent&format=json&formatversion=2&pageids=${req.query.pageid}`)).json();
 
     let content = pageContent.query.pages[0].revisions[0].content;
     content = content.replace(/{{[\s\S]*?}}/g, match => match.replace(/\n/g, ''));
 
     pageContent.query.pages[0].revisions[0].content = turndownService.turndown(InstaView.convert(content));
-    // console.log(pageContent.query.pages[0].revisions[0].content);
-    res.json({ cameras: pageContent });
+
+    var {categories} = await collection.findOne({ pageid: parseInt(req.query.pageid)});
+
+    categories.map((category, i) => {
+        categories[i] = category.replace('Category:', '');
+    })
+        res.json({ cameras: pageContent, categories: categories });
 });
 
 
