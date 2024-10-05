@@ -51,7 +51,7 @@ router.get('/', async function (req, res, next) {
   const database = client.db("multicam");
   const collection = database.collection("camera");
   var page = req.query.page || 1;
-  var cameras = await collection.find({"$or": [{"title": req.query.q}, {"categories": `Category:${req.query.q}`}]}).skip(10*(page-1)).limit(10).toArray();
+  var cameras = await collection.find({"$or": [{"title": new RegExp(req.query.q, 'i')}, {"categories": new RegExp("Category:"+req.query.q, 'i')}]}).skip(10*(page-1)).limit(10).toArray();
 
   await Promise.all(cameras.map(async (camera) => {
     try {
