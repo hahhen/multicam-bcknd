@@ -423,7 +423,7 @@ const namespace_langs = require('instaview/lib/namespace_langs');
             if (match) {
                 const imageSource = match[1];
                 const imageUrl = match[2];
-                return `<a rel="nofollow" class="external text" href="${imageSource}"><img src="${imageUrl}" alt="${imageUrl.split('/').pop()}"></a>`;
+                return `<a rel="nofollow" class="external text" href="${imageSource}"><img src="${imageUrl}" alt="${imageUrl.split('/').pop()}"></a><br>`;
             }
 
             return str;
