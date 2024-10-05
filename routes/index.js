@@ -64,6 +64,7 @@ router.get('/', async function (req, res, next) {
       camera.price = "--"
       camera.image = "https://via.placeholder.com/150"
       camera.currency = ""
+      camera.error = e
     }
   }));
 

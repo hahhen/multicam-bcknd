@@ -52,7 +52,8 @@ router.get('/', async function (req, res, next) {
   const collection = database.collection("camera");
   var page = req.query.page || 1;
   var cameras = await collection.find({"$or": [{"title": new RegExp(req.query.q, 'i')}, {"categories": new RegExp("Category:"+req.query.q, 'i')}]}).skip(10*(page-1)).limit(10).toArray();
-  var totalPages = Math.ceil(await collection.countDocuments({"$or": [{"title": new RegExp(req.query.q, 'i')}, {"categories": new RegExp("Category:"+req.query.q, 'i')}]})/10)
+  var totalItems= await collection.countDocuments({"$or": [{"title": new RegExp(req.query.q, 'i')}, {"categories": new RegExp("Category:"+req.query.q, 'i')}]})
+  var totalPages = Math.ceil(totalItems/10)
 
   await Promise.all(cameras.map(async (camera) => {
     try {
@@ -66,10 +67,11 @@ router.get('/', async function (req, res, next) {
       camera.price = "--"
       camera.image = "https://via.placeholder.com/150"
       camera.currency = ""
+      camera.error = e
     }
   }));
 
-  res.json({ cameras: cameras, page: page, totalPages: totalPages });
+  res.json({ cameras: cameras, page: page, totalPages: totalPages, totalItems: totalItems });
 });
 
 
