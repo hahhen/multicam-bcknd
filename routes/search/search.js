@@ -58,7 +58,7 @@ router.get('/', async function (req, res, next) {
   await Promise.all(cameras.map(async (camera) => {
     try {
       if (req.query.userId) {
-        const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
+        const like = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
         if(like) {
           camera.isLiked = true;
         }
@@ -70,7 +70,7 @@ router.get('/', async function (req, res, next) {
       camera.image = itemSummaries[0].image.imageUrl
     } catch (e) {
       if (req.query.userId) {
-        const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
+        const like = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
         if(like) {
           camera.isLiked = true;
         }
