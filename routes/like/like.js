@@ -99,7 +99,7 @@ router.post('/', async function (req, res, next) {
     if (req.query.operation == "delete") {
         likes = (await collection.deleteOne({ userId: req.query.userId, cameraId: parseInt(req.query.cameraId) }))
     } else {
-        likes = (await collection.insertOne({ userId: req.query.userId, cameraId: parseInt(req.query.cameraId), updatedAt: new Date })).insertedId;
+        likes = (await collection.updateOne({ userId: req.query.userId, cameraId: parseInt(req.query.cameraId)}, {"$set": {"updatedAt": new Date}}, {upsert: true}))
     }
     res.json({ likes: likes });
 })
