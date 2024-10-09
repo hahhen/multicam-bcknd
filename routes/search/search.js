@@ -59,7 +59,7 @@ router.get('/', async function (req, res, next) {
     try {
       if (req.query.userId) {
         const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
-        if (like._id) {
+        if(like) {
           camera.isLiked = true;
         }
       }
@@ -71,7 +71,7 @@ router.get('/', async function (req, res, next) {
     } catch (e) {
       if (req.query.userId) {
         const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
-        if (like._id) {
+        if(like) {
           camera.isLiked = true;
         }
       }
