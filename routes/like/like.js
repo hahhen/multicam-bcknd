@@ -7,6 +7,23 @@ const express = require('express')
 var turndownService = new TurndownService()
 const uri = process.env.MONGODB_PW;
 var router = express.Router();
+const eBayApi = require('ebay-api')
+
+const eBay = new eBayApi({
+  appId: 'ArthurMa-multicam-PRD-849ffde72-c981acce',
+  certId: 'PRD-49ffde721d14-d7d6-4674-a6cf-39d7',
+  sandbox: false
+});
+
+function slugify(str) {
+    return str
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+      .replace(/\-\-+/g, '-');        // Replace multiple - with single -
+  }
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -35,8 +52,41 @@ router.get('/', async function (req, res, next) {
     await client.connect();
     const database = client.db("multicam");
     const collection = database.collection("likes");
-    const likes = await collection.find({ userId: req.query.userId }).toArray();
+    var likes = await collection.find({ userId: req.query.userId }).toArray();
     const totalLikes = likes.length;
+
+    await Promise.all(likes.map(async (like) => {
+        try {
+            var camera = await database.collection("camera").findOne({ pageid: like.cameraId });
+            try {
+                const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                if (liked) {
+                    camera.isLiked = true;
+                }
+                const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
+                camera.priceProvider = "ebay"
+                camera.currency = itemSummaries[0].price.currency
+                camera.price = itemSummaries[0].price.value
+                camera.image = itemSummaries[0].image.imageUrl
+            } catch (e) {
+                console.log(e)
+                const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                if (liked) {
+                    camera.isLiked = true;
+                }
+
+                camera.priceProvider = "none"
+                camera.price = "--"
+                camera.image = "https://via.placeholder.com/150"
+                camera.currency = ""
+                camera.error = e
+                like.camera = camera;
+            }
+            like.camera = camera
+        } catch (e) {
+            console.log(e)
+        }
+    }))
 
     res.json({ likes: likes, totalLikes: totalLikes });
 });
@@ -47,9 +97,9 @@ router.post('/', async function (req, res, next) {
     const collection = database.collection("likes");
     var likes
     if (req.query.operation == "delete") {
-        likes = (await collection.deleteOne({ userId: req.query.userId, cameraId: req.query.cameraId}))
+        likes = (await collection.deleteOne({ userId: req.query.userId, cameraId: parseInt(req.query.cameraId) }))
     } else {
-        likes = (await collection.insertOne({ userId: req.query.userId, cameraId: req.query.cameraId, updatedAt: new Date })).insertedId;
+        likes = (await collection.insertOne({ userId: req.query.userId, cameraId: parseInt(req.query.cameraId), updatedAt: new Date })).insertedId;
     }
     res.json({ likes: likes });
 })
