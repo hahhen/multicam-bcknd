@@ -54,12 +54,24 @@ router.get('/', async function (req, res, next) {
 
   await Promise.all(cameras.map(async (camera) => {
     try {
+      if(req.query.userId){
+        const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
+        if(like._id) {
+          camera.isLiked = true;
+        }
+      }
       const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
       camera.priceProvider = "ebay"
       camera.currency = itemSummaries[0].price.currency
       camera.price = itemSummaries[0].price.value
       camera.image = itemSummaries[0].image.imageUrl
     } catch (e) {
+      if(req.query.userId){
+        const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
+        if(like._id) {
+          camera.isLiked = true;
+        }
+      }
       camera.priceProvider = "none"
       camera.price = "--"
       camera.image = "https://via.placeholder.com/150"

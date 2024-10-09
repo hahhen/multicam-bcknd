@@ -51,18 +51,30 @@ router.get('/', async function (req, res, next) {
   const database = client.db("multicam");
   const collection = database.collection("camera");
   var page = req.query.page || 1;
-  var cameras = await collection.find({"$or": [{"title": new RegExp(req.query.q, 'i')}, {"categories": new RegExp("Category:"+req.query.q, 'i')}]}).skip(10*(page-1)).limit(10).toArray();
-  var totalItems= await collection.countDocuments({"$or": [{"title": new RegExp(req.query.q, 'i')}, {"categories": new RegExp("Category:"+req.query.q, 'i')}]})
-  var totalPages = Math.ceil(totalItems/10)
+  var cameras = await collection.find({ "$or": [{ "title": new RegExp(req.query.q, 'i') }, { "categories": new RegExp("Category:" + req.query.q, 'i') }] }).skip(10 * (page - 1)).limit(10).toArray();
+  var totalItems = await collection.countDocuments({ "$or": [{ "title": new RegExp(req.query.q, 'i') }, { "categories": new RegExp("Category:" + req.query.q, 'i') }] })
+  var totalPages = Math.ceil(totalItems / 10)
 
   await Promise.all(cameras.map(async (camera) => {
     try {
+      if (req.query.userId) {
+        const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
+        if (like._id) {
+          camera.isLiked = true;
+        }
+      }
       const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
       camera.priceProvider = "ebay"
       camera.currency = itemSummaries[0].price.currency
       camera.price = itemSummaries[0].price.value
       camera.image = itemSummaries[0].image.imageUrl
     } catch (e) {
+      if (req.query.userId) {
+        const like = await database.collection("likes").findOne({ cameraId: camera._id, userId: req.query.userId });
+        if (like._id) {
+          camera.isLiked = true;
+        }
+      }
       camera.priceProvider = "none"
       camera.price = "--"
       camera.image = "https://via.placeholder.com/150"
