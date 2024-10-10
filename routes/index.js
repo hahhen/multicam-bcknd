@@ -56,6 +56,7 @@ router.get('/', async function (req, res, next) {
     try {
       if (req.query.userId) {
         const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+        console.log(liked)
         if (liked) {
           camera.isLiked = true;
         }

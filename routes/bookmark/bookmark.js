@@ -65,7 +65,7 @@ router.get('/', async function (req, res, next) {
                     camera.isLiked = true;
                 }
                 if (bookmarked) {
-                    camera.isLiked = true;
+                    camera.isBookmarked = true;
                 }
                 const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
                 camera.priceProvider = "ebay"
