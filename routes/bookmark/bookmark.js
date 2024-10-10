@@ -52,15 +52,19 @@ router.get('/', async function (req, res, next) {
     await client.connect();
     const database = client.db("multicam");
     const collection = database.collection("bookmarks");
-    var bookmarks = await collection.find({ userId: req.query.userId }).toArray();
+    var bookmarks = await collection.find({ userId: req.query.userId }).sort({updatedAt: -1}).toArray();
     const totalbookmarks = bookmarks.length;
 
     await Promise.all(bookmarks.map(async (like) => {
         try {
             var camera = await database.collection("camera").findOne({ pageid: like.cameraId });
             try {
-                const liked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                const bookmarked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
                 if (liked) {
+                    camera.isLiked = true;
+                }
+                if (bookmarked) {
                     camera.isLiked = true;
                 }
                 const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
@@ -70,9 +74,13 @@ router.get('/', async function (req, res, next) {
                 camera.image = itemSummaries[0].image.imageUrl
             } catch (e) {
                 console.log(e)
-                const liked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
                 if (liked) {
                     camera.isLiked = true;
+                }
+                const bookmarked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                if (bookmarked) {
+                    camera.isBookmarked = true;
                 }
 
                 camera.priceProvider = "none"

@@ -54,10 +54,14 @@ router.get('/', async function (req, res, next) {
 
   await Promise.all(cameras.map(async (camera) => {
     try {
-      if(req.query.userId){
-        const like = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
-        if(like) {
+      if (req.query.userId) {
+        const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+        if (liked) {
           camera.isLiked = true;
+        }
+        const bookmarked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+        if (bookmarked) {
+          camera.isBookmarked = true;
         }
       }
       const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
@@ -66,10 +70,14 @@ router.get('/', async function (req, res, next) {
       camera.price = itemSummaries[0].price.value
       camera.image = itemSummaries[0].image.imageUrl
     } catch (e) {
-      if(req.query.userId){
-        const like = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
-        if(like) {
+      if (req.query.userId) {
+        const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+        if (liked) {
           camera.isLiked = true;
+        }
+        const bookmarked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+        if (bookmarked) {
+          camera.isBookmarked = true;
         }
       }
       camera.priceProvider = "none"

@@ -52,7 +52,7 @@ router.get('/', async function (req, res, next) {
     await client.connect();
     const database = client.db("multicam");
     const collection = database.collection("likes");
-    var likes = await collection.find({ userId: req.query.userId }).toArray();
+    var likes = await collection.find({ userId: req.query.userId }).sort({updatedAt: -1}).toArray();
     const totalLikes = likes.length;
 
     await Promise.all(likes.map(async (like) => {
@@ -62,6 +62,10 @@ router.get('/', async function (req, res, next) {
                 const liked = await database.collection("likes").findOne({ cameraId: camera.pageid, userId: req.query.userId });
                 if (liked) {
                     camera.isLiked = true;
+                }
+                const bookmarked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                if (bookmarked) {
+                    camera.isBookmarked = true;
                 }
                 const { itemSummaries } = await eBay.buy.browse.search({ q: slugify(camera.title), limit: 1 });
                 camera.priceProvider = "ebay"
@@ -74,7 +78,10 @@ router.get('/', async function (req, res, next) {
                 if (liked) {
                     camera.isLiked = true;
                 }
-
+                const bookmarked = await database.collection("bookmarks").findOne({ cameraId: camera.pageid, userId: req.query.userId });
+                if (bookmarked) {
+                    camera.isBookmarked = true;
+                }
                 camera.priceProvider = "none"
                 camera.price = "--"
                 camera.image = "https://via.placeholder.com/150"
